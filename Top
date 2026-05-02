@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VSV SOLVE — Identity Platform</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --card: #1a2033;
+    --border: #2a3248;
+    --fg: #e8eaf0;
+    --muted: #6b7a99;
+    --primary: #6577f5;
+    --primary-fg: #ffffff;
+    --green: #3ecf8e;
+    --red: #f06060;
+    --amber: #f5a623;
+    --sidebar-w: 240px;
+  }
+  [data-theme="light"] {
+    --bg: #f4f6fb;
+    --bg2: #ffffff;
+    --card: #ffffff;
+    --border: #dde2ef;
+    --fg: #111827;
+    --muted: #6b7280;
+    --primary: #4f63e8;
+    --sidebar-w: 240px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); font-size: 14px; }
+  a { text-decoration: none; color: inherit; }
+  button { cursor: pointer; font-family: inherit; }
+  input, textarea, select { font-family: inherit; }
+
+  /* Layout */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--primary); display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { color: #fff; }
+  .logo-name { font-weight: 700; font-size: 15px; }
+.logo-sub { font-size: 11px; color: var(--muted); }
+  .nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 7px;
+    color: var(--muted); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: rgba(101,119,245,.08); color: var(--fg); }
+  .nav-item.active { background: rgba(101,119,245,.15); color: var(--primary); font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .sidebar-footer {
+    padding: 12px 8px; border-top: 1px solid var(--border);
+  }
+  .theme-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 7px; width: 100%;
+    background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer;
+  }
+  .theme-btn:hover { color: var(--fg); }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    height: 54px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px;
+    background: var(--bg2); gap: 12px;
+  }
+  .topbar-title { font-weight: 700; font-size: 17px; }
+  .topbar-sub { color: var(--muted); font-size: 12px; margin-left: 2px; }
+  .content { flex: 1; overflow-y: auto; }
+
+  /* Pages */
+  .page { padding: 24px; display: none; }
+  .page.active { display: block; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px; display: flex; align-items: flex-start; gap: 14px;
+  }
+  .stat-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .stat-value { font-size: 26px; font-weight: 700; margin-top: 2px; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .icon-primary { background: rgba(101,119,245,.12); color: var(--primary); }
+  .icon-green { background: rgba(62,207,142,.12); color: var(--green); }
+  .icon-red { background: rgba(240,96,96,.12); color: var(--red); }
+  .icon-amber { background: rgba(245,166,35,.12); color: var(--amber); }
+
+  /* Chart placeholder */
+  .charts-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 20px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .chart-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+  .chart-area { position: relative; height: 180px; }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* Table / list */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 600; }
+  .card-link { font-size: 12px; color: var(--primary); cursor: pointer; }
+  .list-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-icon { flex-shrink: 0; }
+  .list-label { font-size: 13px; font-weight: 500; }
+.list-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .list-time { font-size: 11px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: rgba(62,207,142,.15); color: var(--green); }
+  .badge-red { background: rgba(240,96,96,.15); color: var(--red); }
+  .badge-amber { background: rgba(245,166,35,.15); color: var(--amber); }
+  .badge-muted { background: rgba(107,122,153,.12); color: var(--muted); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--fg); }
+  .btn-danger { background: rgba(240,96,96,.12); color: var(--red); border: 1px solid rgba(240,96,96,.2); }
+
+  /* Filter tabs */
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 500;
+    border: none; cursor: pointer; transition: all .15s;
+    background: rgba(107,122,153,.12); color: var(--muted);
+  }
+  .filter-btn.active { background: var(--primary); color: #fff; }
+
+  /* Cred items */
+  .cred-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+cursor: pointer; transition: border-color .15s;
+  }
+  .cred-item:last-child { border-bottom: none; }
+  .cred-item:hover { background: rgba(101,119,245,.04); }
+  .cred-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: rgba(101,119,245,.1); display: flex; align-items: center; justify-content: center;
+    color: var(--primary); flex-shrink: 0;
+  }
+  .cred-title { font-size: 14px; font-weight: 600; }
+  .cred-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .chevron { margin-left: auto; color: var(--muted); }
+
+  /* Identity card */
+  .did-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .did-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-bottom: 8px; }
+  .did-value {
+    font-family: monospace; font-size: 12px; background: var(--bg);
+    padding: 10px 14px; border-radius: 7px; word-break: break-all; color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-bottom: 4px; }
+  .field-value { font-size: 13px; }
+
+  /* Audit */
+  .audit-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+  }
+  .audit-item:last-child { border-bottom: none; }
+  .audit-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .audit-action { font-size: 13px; font-weight: 500; }
+  .audit-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.audit-time { margin-left: auto; font-size: 11px; color: var(--muted); flex-shrink: 0; text-align: right; }
+
+  /* API key */
+  .key-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+  }
+  .key-name { font-size: 13px; font-weight: 600; }
+  .key-hash { font-family: monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .scopes { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .scope-tag { font-size: 10px; font-family: monospace; background: rgba(101,119,245,.1); color: var(--primary); padding: 2px 6px; border-radius: 4px; }
+
+  /* QR page */
+  .qr-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 32px; max-width: 440px; margin: 0 auto; text-align: center;
+  }
+  .qr-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(101,119,245,.12); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .qr-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; color: var(--fg); font-size: 12px; font-family: monospace;
+    resize: none; outline: none; margin-bottom: 12px;
+  }
+  .qr-input:focus { border-color: var(--primary); }
+
+  /* Settings */
+  .settings-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .settings-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; }
+  .settings-label { font-size: 13px; font-weight: 500; }
+  .settings-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+
+  /* Toggle */
+  .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border); border-radius: 999px; cursor: pointer; transition: .2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px;
+    background: white; border-radius: 50%; transition: .2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--primary); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+/* Responsive */
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Page header */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 20px; font-weight: 700; }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; }
+  .empty-icon { width: 56px; height: 56px; color: var(--muted); margin: 0 auto 12px; }
+  .empty-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .empty-sub { font-size: 12px; color: var(--muted); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">VSV SOLVE</div>
+        <div class="logo-sub">Identity Platform</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" onclick="showPage('dashboard', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('identity', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Identity
+      </button>
+      <button class="nav-item" onclick="showPage('credentials', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Credentials
+      </button>
+      <button class="nav-item" onclick="showPage('verify', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Verify QR
+      </button>
+      <button class="nav-item" onclick="showPage('access', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Access Grants
+      </button>
+      <button class="nav-item" onclick="showPage('apikeys', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        API Keys
+      </button>
+      <button class="nav-item" onclick="showPage('audit', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Audit Log
+      </button>
+      <button class="nav-item" onclick="showPage('settings', this)">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-btn" onclick="toggleTheme()">
+        <svg id="theme-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <span id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title" id="page-title">Dashboard</div>
+/div>
+    </header>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon icon-primary">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Total Credentials</div>
+              <div class="stat-value">3</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon icon-green">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Active</div>
+              <div class="stat-value">3</div>
+              <div class="stat-sub">Valid now</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon icon-red">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Revoked</div>
+              <div class="stat-value">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon icon-amber">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Expired</div>
+              <div class="stat-value">0</div>
+/div>
+          </div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon icon-primary" style="background:rgba(101,119,245,.1)">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Verifications</div>
+              <div class="stat-value">23</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon icon-green">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">Access Grants</div>
+              <div class="stat-value">2</div>
+              <div class="stat-sub">Active</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon icon-primary">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </div>
+            <div>
+              <div class="stat-label">API Keys</div>
+              <div class="stat-value">0</div>
+            </div>
+          </div>
+          <div style="background:var(--primary);border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-weight:700;color:#fff;font-size:13px;" onclick="showPage('credentials',document.querySelectorAll('.nav-item')[2])">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Issue Credential
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Credential Activity (14 days)</div>
+            <div class="chart-area">
+              <svg class="chart-svg" viewBox="0 0 500 160" preserveAspectRatio="none">
+                <defs>
+<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#6577f5" stop-opacity=".3"/>
+                    <stop offset="100%" stop-color="#6577f5" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3ecf8e" stop-opacity=".3"/>
+                    <stop offset="100%" stop-color="#3ecf8e" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid lines -->
+                <line x1="0" y1="40" x2="500" y2="40" stroke="rgba(107,122,153,.1)" stroke-width="1"/>
+                <line x1="0" y1="80" x2="500" y2="80" stroke="rgba(107,122,153,.1)" stroke-width="1"/>
+                <line x1="0" y1="120" x2="500" y2="120" stroke="rgba(107,122,153,.1)" stroke-width="1"/>
+                <!-- Issued area -->
+                <path d="M0,140 L35,120 L70,100 L105,110 L140,90 L175,80 L210,95 L245,70 L280,85 L315,60 L350,75 L385,50 L420,65 L455,40 L500,55 L500,160 L0,160Z" fill="url(#g1)"/>
+                <path d="M0,140 L35,120 L70,100 L105,110 L140,90 L175,80 L210,95 L245,70 L280,85 L315,60 L350,75 L385,50 L420,65 L455,40 L500,55" fill="none" stroke="#6577f5" stroke-width="2"/>
+                <!-- Verified area -->
+                <path d="M0,155 L35,140 L70,130 L105,145 L140,120 L175,110 L210,125 L245,105 L280,115 L315,90 L350,100 L385,80 L420,95 L455,70 L500,85 L500,160 L0,160Z" fill="url(#g2)"/>
+                <path d="M0,155 L35,140 L70,130 L105,145 L140,120 L175,110 L210,125 L245,105 L280,115 L315,90 L350,100 L385,80 L420,95 L455,70 L500,85" fill="none" stroke="#3ecf8e" stroke-width="2"/>
+              </svg>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:10px;height:2px;background:#6577f5;display:inline-block;border-radius:2px"></span>Issued</span>
+              <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:10px;height:2px;background:#3ecf8e;display:inline-block;border-radius:2px"></span>Verified</span>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Credential Types</div>
+            <div style="display:flex;align-items:center;justify-content:center;height:150px">
+              <svg viewBox="0 0 100 100" width="130" height="130">
+                <!-- Pie slices approximation -->
+                <circle r="30" cx="50" cy="50" fill="none" stroke="#6577f5" stroke-width="20" stroke-dasharray="62.8 188.4" stroke-dashoffset="0"/>
+                <circle r="30" cx="50" cy="50" fill="none" stroke="#3ecf8e" stroke-width="20" stroke-dasharray="62.8 188.4" stroke-dashoffset="-62.8"/>
+circle r="30" cx="50" cy="50" fill="none" stroke="#f5a623" stroke-width="20" stroke-dasharray="62.8 188.4" stroke-dashoffset="-125.6"/>
+                <circle cx="50" cy="50" r="18" fill="var(--card)"/>
+              </svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">
+              <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#6577f5;display:inline-block;border-radius:2px;flex-shrink:0"></span>National ID</span>
+              <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#3ecf8e;display:inline-block;border-radius:2px;flex-shrink:0"></span>University Degree</span>
+              <span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#f5a623;display:inline-block;border-radius:2px;flex-shrink:0"></span>Employment</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Activity</span>
+            <span class="card-link" onclick="showPage('audit',document.querySelectorAll('.nav-item')[6])">View all</span>
+</div>
+          <div class="list-item">
+            <div class="list-icon"><svg width="14" height="14" fill="none" stroke="#3ecf8e" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div><div class="list-label">Credential Verified</div><div class="list-sub">employment: Senior SWE at TechCorp</div></div>
+            <div class="list-time">2d ago</div>
+          </div>
+          <div class="list-item">
+            <div class="list-icon"><svg width="14" height="14" fill="none" stroke="#f06060" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+            <div><div class="list-label">Access Revoked</div><div class="list-sub">Access revoked from FreelanceHub Platform</div></div>
+            <div class="list-time">10d ago</div>
+          </div>
+          <div class="list-item">
+            <div class="list-icon"><svg width="14" height="14" fill="none" stroke="#6577f5" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div><div class="list-label">Credential Verified</div><div class="list-sub">national_id: US National ID</div></div>
+            <div class="list-time">5d ago</div>
+          </div>
+          <div class="list-item">
+            <div class="list-icon"><svg width="14" height="14" fill="none" stroke="#3ecf8e" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div><div class="list-label">Credential Issued</div><div class="list-sub">employment: Senior SWE at TechCorp Industries</div></div>
+            <div class="list-time">1y ago</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IDENTITY -->
+      <div class="page" id="page-identity">
+        <div class="page-header">
+          <div><div class="page-title">Identity</div><div class="page-sub">Your decentralized identity profile</div></div>
+          <button class="btn btn-outline">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+        </div>
+
+        <div class="did-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <svg width="16" height="16" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style="font-size:13px;font-weight:600">Decentralized Identifier</span>
+          </div>
+          <div class="did-value">did:vsv:l8x2k9mfp3q7</div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <span class="badge badge-green">✓ Biometric</span>
+            <span class="badge badge-muted">✗ 2FA</span>
+            <span class="badge badge-green">✓ DID Registered</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><span class="card-title">Profile Information</span></div>
+          <div style="padding:20px">
+            <div class="profile-grid">
+              <div><div class="field-label">Full Name</div><div class="field-value">Alex Morgan</div></div>
+              <div><div class="field-label">Email</div><div class="field-value">alex.morgan@example.com</div></div>
+              <div><div class="field-label">Phone</div><div class="field-value">+1-555-0142</div></div>
+              <div><div class="field-label">Date of Birth</div><div class="field-value">1990-04-15</div></div>
+              <div><div class="field-label">Nationality</div><div class="field-value">United States</div></div>
+              <div><div class="field-label">Registered</div><div class="field-value">5/2/2023</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><span class="card-title">Biometric Verification</span></div>
+<div style="padding:20px">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Face verification uses SHA-256 hashing — no image is ever stored on our servers.</p>
+            <div style="display:flex;align-items:center;gap:10px;padding:12px;background:rgba(62,207,142,.08);border-radius:8px;border:1px solid rgba(62,207,142,.2)">
+              <svg width="16" height="16" fill="none" stroke="#3ecf8e" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              <span style="font-size:13px;color:#3ecf8e;font-weight:600">Biometric hash registered</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREDENTIALS -->
+      <div class="page" id="page-credentials">
+        <div class="page-header">
+          <div><div class="page-title">Credentials</div><div class="page-sub">Manage your verifiable credentials</div></div>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Issue Credential
+          </button>
+        </div>
+
+        <div class="filters">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">Active</button>
+          <button class="filter-btn">Revoked</button>
+          <button class="filter-btn">Expired</button>
+        </div>
+
+        <div class="card">
+          <div class="cred-item">
+            <div class="cred-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="cred-title">US National ID</div>
+                <span class="badge badge-green">✓ Active</span>
+              </div>
+              <div class="cred-meta">National ID · US Department of State · Issued 5/2/2024 · Expires 5/2/2034 · 4 verifications</div>
+            </div>
+            <div class="chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <div class="cred-item">
+<div class="cred-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="cred-title">Bachelor of Computer Science</div>
+                <span class="badge badge-green">✓ Active</span>
+              </div>
+              <div class="cred-meta">University Degree · Massachusetts Institute of Technology · Issued 5/2/2023 · 12 verifications</div>
+            </div>
+            <div class="chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+          <div class="cred-item">
+            <div class="cred-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="cred-title">Senior Software Engineer</div>
+                <span class="badge badge-green">✓ Active</span>
+              </div>
+              <div class="cred-meta">Employment · TechCorp Industries · Issued 5/2/2025 · Expires 5/2/2028 · 7 verifications</div>
+            </div>
+            <div class="chevron"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VERIFY QR -->
+      <div class="page" id="page-verify">
+        <div class="qr-box">
+          <div class="qr-icon">
+            <svg width="30" height="30" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:6px">Verify QR Credential</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Paste QR code data to verify a credential's authenticity</div>
+          <textarea class="qr-input" rows="5" placeholder="Paste the QR code data string here..."></textarea>
+          <button class="btn btn-primary" style="width:100%;justify-content:center">Verify Credential</button>
+        </div>
+      </div>
+
+      <!-- ACCESS GRANTS -->
+      <div class="page" id="page-access">
+        <div class="page-header">
+          <div><div class="page-title">Access Grants</div><div class="page-sub">Control who has access to your identity data</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" fill="none" stroke="#3ecf8e" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Active Grants (2)
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="key-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:rgba(101,119,245,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="15" height="15" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="key-name">Acme Corp HR Portal</div>
+              <div class="key-hash">Credential: Bachelor of Computer Science</div>
+              <div style="font-size:11px;color:var(--muted)">Granted 4/2/2026</div>
+            </div>
+            <button class="btn btn-danger" style="padding:6px 10px;font-size:12px">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Revoke
+            </button>
+          </div>
+          <div class="key-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:rgba(101,119,245,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="15" height="15" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+</div>
+            <div style="flex:1;min-width:0">
+              <div class="key-name">City Bank KYC System</div>
+              <div class="key-hash">Credential: US National ID</div>
+              <div style="font-size:11px;color:var(--muted)">Granted 3/3/2026</div>
+            </div>
+            <button class="btn btn-danger" style="padding:6px 10px;font-size:12px">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Revoke
+            </button>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Revoked (1)</div>
+        <div class="card" style="opacity:.55">
+          <div class="key-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div style="flex:1">
+              <div class="key-name">FreelanceHub Platform</div>
+              <div class="key-hash">Senior Software Engineer</div>
+            </div>
+            <span style="font-size:11px;color:var(--muted)">Revoked</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- API KEYS -->
+      <div class="page" id="page-apikeys">
+        <div class="page-header">
+          <div><div class="page-title">API Keys</div><div class="page-sub">Manage developer access to your identity API</div></div>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Generate Key
+          </button>
+        </div>
+        <div class="empty">
+          <div class="empty-icon" style="margin:0 auto 12px">
+            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" width="56" height="56"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          </div>
+          <div class="empty-title">No API keys yet</div>
+          <div class="empty-sub">Generate a key to integrate VSV SOLVE into your applications.</div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="page" id="page-audit">
+        <div class="page-header">
+          <div><div class="page-title">Audit Log</div><div class="page-sub">Full tamper-evident record of all identity actions</div></div>
+        </div>
+        <div class="filters">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">credential issued</button><button class="filter-btn">credential revoked</button>
+          <button class="filter-btn">credential verified</button>
+          <button class="filter-btn">access revoked</button>
+          <button class="filter-btn">api key created</button>
+        </div>
+        <div class="card">
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#3ecf8e"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Credential Verified</div>
+              <div class="audit-detail">employment: Senior SWE at TechCorp</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">credential</div>
+            </div>
+            <div class="audit-time">5/2/2026<br>10:14 AM</div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#f06060"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Access Revoked</div>
+              <div class="audit-detail">Access revoked from FreelanceHub Platform</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">access_grant</div>
+            </div>
+            <div class="audit-time">4/22/2026<br>3:09 PM</div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#6577f5"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Credential Verified</div>
+              <div class="audit-detail">Verification successful</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">credential</div>
+            </div>
+            <div class="audit-time">4/17/2026<br>8:55 AM</div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#3ecf8e"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Credential Issued</div>
+              <div class="audit-detail">employment: Senior SWE at TechCorp Industries</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">credential</div>
+            </div>
+            <div class="audit-time">5/2/2025<br>9:00 AM</div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#3ecf8e"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Credential Issued</div>
+              <div class="audit-detail">national_id: US National ID from US DoS</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">credential</div>
+            </div>
+            <div class="audit-time">5/2/2024<br>9:00 AM</div>
+          </div>
+          <div class="audit-item">
+            <div class="audit-dot" style="background:#3ecf8e"></div>
+            <div style="flex:1;min-width:0">
+              <div class="audit-action">Identity Created</div>
+div class="audit-detail">DID registered: did:vsv:l8x2k9mfp3q7</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:monospace">identity</div>
+            </div>
+            <div class="audit-time">5/2/2023<br>9:00 AM</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+          <span style="font-size:12px;color:var(--muted)">1–6 of 6 entries</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="padding:6px 8px" disabled>‹</button>
+            <button class="btn btn-outline" style="padding:6px 8px" disabled>›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <div><div class="page-title">Settings</div><div class="page-sub">Platform preferences and data management</div></div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Appearance</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Color Mode</div>
+              <div class="settings-sub" id="theme-mode-sub">Currently: Dark mode</div>
+            </div>
+            <button class="btn btn-outline" onclick="toggleTheme()">
+              <svg id="settings-theme-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              <span id="theme-btn-label">Switch to Light</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Identity Information</div>
+          <div style="background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <svg width="16" height="16" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div>
+              <div style="font-size:11px;color:var(--muted)">DID</div>
+              <div style="font-family:monospace;font-size:12px">did:vsv:l8x2k9mfp3q7</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px">Registered on 5/2/2023</div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">Data Backup &amp; Restore</div>
+<p style="font-size:12px;color:var(--muted);margin-bottom:14px">Export your identity data as a JSON backup or restore from a previous backup.</p>
+          <button class="btn btn-primary" style="margin-bottom:18px" onclick="exportBackup()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Backup
+          </button>
+          <hr style="border-color:var(--border);margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">Restore from Backup</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;margin-bottom:12px">
+            <svg width="14" height="14" fill="none" stroke="#f5a623" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span style="font-size:12px;color:#f5a623">Restoring will overwrite your current data. This action cannot be undone.</span>
+          </div>
+          <textarea class="qr-input" rows="4" placeholder="Paste your backup JSON here..." style="margin-bottom:10px"></textarea>
+          <button class="btn btn-outline">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Restore Backup
+          </button>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">About VSV SOLVE</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.8">
+            <div>Version 1.0.0</div>
+            <div>Privacy-first decentralized identity platform</div>
+<div>SHA-256 biometric hashing · Zero central authority · Instant revocation</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const PAGES = {
+    dashboard: 'Dashboard',
+    identity: 'Identity',
+    credentials: 'Credentials',
+    verify: 'Verify QR',
+    access: 'Access Grants',
+    apikeys: 'API Keys',
+    audit: 'Audit Log',
+    settings: 'Settings',
+  };
+
+  function showPage(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    document.getElementById('page-title').textContent = PAGES[id] ?? id;
+  }
+
+  let dark = true;
+  function toggleTheme() {
+    dark = !dark;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.getElementById('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    document.getElementById('theme-btn-label').textContent = dark ? 'Switch to Light' : 'Switch to Dark';
+    document.getElementById('theme-mode-sub').textContent = 'Currently: ' + (dark ? 'Dark mode' : 'Light mode');
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.closest('.filters').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  function exportBackup() {
+    const data = {
+      exported: new Date().toISOString(),
+      version: '1.0',
+      identity: {
+        did: 'did:vsv:l8x2k9mfp3q7',
+        fullName: 'Alex Morgan',
+        email: 'alex.morgan@example.com',
+        nationality: 'United States',
+      },
+      credentials: [
+        { id: '10000000-0000-0000-0000-000000000001', type: 'national_id', title: 'US National ID', issuer: 'US Department of State', status: 'active' },
+        { id: '10000000-0000-0000-0000-000000000002', type: 'degree', title: 'Bachelor of Computer Science', issuer: 'MIT', status: 'active' },
+        { id: '10000000-0000-0000-0000-000000000003', type: 'employment', title: 'Senior Software Engineer', issuer: 'TechCorp Industries', status: 'active' },
+      ]
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'vsv-solve-backup.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
